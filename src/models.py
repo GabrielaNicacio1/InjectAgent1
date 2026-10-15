@@ -1,6 +1,44 @@
 import os
+import json, struct, math
 from src.utils import get_response_text
 import time
+
+
+
+# ---- 2) Parameter-count guard ----
+'''MAX_PARAMS_B = float(os.environ.get("MAX_PARAMS_B", 7.7))   # billions
+
+def _count_params_b(name):
+    """Return parameter count in billions, or None if it can't be determined."""
+    if os.path.isdir(name):
+        # Local checkpoint: sum tensor shapes from .safetensors headers (dtype-independent)
+        total, found = 0, False
+        for f in os.listdir(name):
+            if not f.endswith(".safetensors"):
+                continue
+            found = True
+            with open(os.path.join(name, f), "rb") as fh:
+                n = struct.unpack("<Q", fh.read(8))[0]
+                header = json.loads(fh.read(n))
+            total += sum(math.prod(v["shape"]) for k, v in header.items()
+                         if k != "__metadata__")
+        return total / 1e9 if found else None
+    # Hub repo: read parameter count from metadata, no weights downloaded
+    from huggingface_hub import HfApi
+    st = HfApi().model_info(name, expand=["safetensors"]).safetensors
+    return st.total / 1e9 if st and st.total else None
+
+def check_model_size(name, max_b=MAX_PARAMS_B):
+    b = _count_params_b(name)
+    if b is None:
+        raise ValueError(f"{name}: cannot determine parameter count; refusing to load.")
+    if b > max_b:
+        raise ValueError(f"{name}: {b:.1f}B parameters exceeds limit of {max_b}B.")
+    print(f"[size check] {name}: {b:.1f}B parameters (limit {max_b}B)")
+
+
+#####################
+'''
 class BaseModel:
     def __init__(self):
         self.model = None
@@ -10,7 +48,47 @@ class BaseModel:
 
     def call_model(self, model_input):
         raise NotImplementedError("This method should be overridden by subclasses.")
+
+
+####
+class HFChatModel(BaseModel):
+    def __init__(self, params):
+        super().__init__()
+        import torch
+        import transformers
+
+        name = params['model_name']
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(name)
+        self.model = transformers.AutoModelForCausalLM.from_pretrained(
+            name,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+        )
+        self.model.eval()
+
+    def prepare_input(self, sys_prompt, user_prompt_filled):
+        messages = [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": user_prompt_filled},
+        ]
+        return self.tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+
+    def call_model(self, model_input):
+        inputs = self.tokenizer(
+            model_input, return_tensors="pt", add_special_tokens=False
+        ).to(self.model.device)
+        output = self.model.generate(
+            **inputs, max_new_tokens=512, do_sample=False
+        )
+        # Decode only the newly generated tokens (no prompt echo)
+        return self.tokenizer.decode(
+            output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True
+        )
     
+
+    ############
 class ClaudeModel(BaseModel):     
     def __init__(self, params):
         super().__init__()  
@@ -97,7 +175,10 @@ class TogetherAIModel(BaseModel):
     
 class LlamaModel(BaseModel):     
     def __init__(self, params):
-        super().__init__()  
+        super().__init__() 
+        ###########
+        #check_model_size(params['model_name']) 
+        ########
         import transformers
         import torch
         tokenizer = transformers.AutoTokenizer.from_pretrained(params['model_name'])
@@ -124,5 +205,6 @@ MODELS = {
     "Claude": ClaudeModel,
     "GPT": GPTModel,
     "Llama": LlamaModel,
-    "TogetherAI": TogetherAIModel
+    "TogetherAI": TogetherAIModel,
+    "HFChat": HFChatModel
 }   
