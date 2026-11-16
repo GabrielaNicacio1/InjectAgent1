@@ -8,7 +8,8 @@ def define_arguments_prompted(parser):
     parser.add_argument("--only_first_step", default=False, action='store_true', help="Only predict the first step")
     parser.add_argument("--use_cache", default=False, action='store_true', help="Use existing dataset")
     parser.add_argument("--only_get_score", default=False, action='store_true', help="Only get score without inference")
-    
+    parser.add_argument("--data_dir", default="./data", help="Folder with test_cases_{dh,ds}_{setting}.json (e.g. data/channels/pdf/pymupdf/white)")
+
     
 def define_arguments_finetuned(parser):
     parser.add_argument("--model_name", help="Name of the model to evaluate", required=True)
