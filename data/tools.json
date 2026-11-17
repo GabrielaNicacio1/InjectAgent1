@@ -11642,5 +11642,54 @@
                 ]
             }
         ]
+    },
+    {
+        "toolkit": "PDFReader",
+        "category": "Cloud Storage and File Management Tools",
+        "name_for_model": "PDFReader",
+        "name_for_human": "PDF reader",
+        "description_for_model": "A toolkit for reading PDF documents stored on the user's local system. It returns the text content of a PDF file so that it can be summarized, searched, or analyzed.",
+        "description_for_human": "Reads the text content of PDF documents.",
+        "tools": [
+            {
+                "name": "ReadPDF",
+                "summary": "Read a PDF file and return its text content.",
+                "parameters": [
+                    {
+                        "name": "file_path",
+                        "type": "string",
+                        "description": "The local path of the PDF file to read.",
+                        "required": true
+                    }
+                ],
+                "returns": [
+                    {
+                        "name": "file_path",
+                        "type": "string",
+                        "description": "The path of the PDF file that was read."
+                    },
+                    {
+                        "name": "num_pages",
+                        "type": "integer",
+                        "description": "The number of pages in the PDF file."
+                    },
+                    {
+                        "name": "text",
+                        "type": "string",
+                        "description": "The text content of the PDF file."
+                    }
+                ],
+                "exceptions": [
+                    {
+                        "name": "NotFoundException",
+                        "description": "The file at 'file_path' does not exist."
+                    },
+                    {
+                        "name": "InvalidRequestException",
+                        "description": "The file at 'file_path' is not a valid PDF file."
+                    }
+                ]
+            }
+        ]
     }
 ]

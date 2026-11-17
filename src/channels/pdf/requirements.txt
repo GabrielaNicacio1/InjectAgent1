@@ -1,0 +1,8 @@
+reportlab>=4.0
+pymupdf>=1.24
+pypdf>=4.0
+rapidfuzz>=3.0
+numpy
+pytest
+# system binaries: tesseract (OCR reader), poppler-utils (pdftotext reader)
+# needed by the existing runner but missing from the top-level requirements.txt: nltk, tqdm, together

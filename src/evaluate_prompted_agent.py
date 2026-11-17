@@ -30,9 +30,13 @@ def main(params):
     model_class = MODELS[params['model_type']](params)
     system_prompt, user_prompt = PROMPT_DICT[params['prompt_type']]
     output_dir = f"./results/prompted_{params['model_type']}_{params['model_name']}_{params['prompt_type']}"
+    data_dir = params.get('data_dir') or './data'
+    # Separate output folder per data folder, so channels/conditions never share a cache.
+    data_tag = os.path.relpath(os.path.normpath(data_dir), 'data').replace(os.sep, '-')
+    if data_tag != '.':
+        output_dir += f"_{data_tag}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    data_dir = './data'
     
     tool_dict = get_tool_dict()
     
