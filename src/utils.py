@@ -2,12 +2,21 @@ import json
 import os
 import re
 from src.prompts.generation_prompts import SYSTEM_MESSAGE, DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE, EXAMPLE
-from openai import OpenAI
 
-client = OpenAI(
+'''client = OpenAI(
     api_key = os.environ.get("OPENAI_API_KEY"),
     organization = os.environ.get("OPENAI_ORGANIZATION")
-)
+)'''
+def get_openai_client():
+    # Created only when needed, so local-only runs work without an OpenAI key.
+    global _client
+    if _client is None:
+        from openai import OpenAI
+        _client = OpenAI(
+            api_key = os.environ.get("OPENAI_API_KEY"),
+            organization = os.environ.get("OPENAI_ORGANIZATION")
+        )
+    return _client
 
 def get_score(output_files):
     dh_output_file = output_files['dh']

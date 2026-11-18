@@ -153,18 +153,33 @@ class LlamaModel(BaseModel):
             tokenizer=tokenizer,
             torch_dtype=torch.bfloat16,
             device_map="auto",
-            max_length=4096,
+        )
+        self.gen_kwargs = dict(
+            max_new_tokens=512,
             do_sample=False, # temperature=0
-            eos_token_id=tokenizer.eos_token_id,
+            return_full_text = False,
+            add_special_tokens=False,
+            #eos_token_id=tokenizer.eos_token_id, lets model use own stopped token list
         )
 
-    def prepare_input(self, sys_prompt, user_prompt_filled):
-        model_input = f"[INST] <<SYS>>\n{sys_prompt}\n<</SYS>>\n\n{user_prompt_filled} [/INST]"
-        return model_input
+    def prepare_input(self, sys_prompt, user_prompt_filled, tools=None):
+        # Was a hard-coded Llama 2 string. Now each model's own template formats it.
+        messages = [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": user_prompt_filled},
+        ]
+        return self.tokenizer.apply_chat_template(
+            messages, tools=tools, tokenize=False, add_generation_prompt=True
+        )
+
+    def prepare_messages(self, messages, tools=None):
+        return self.tokenizer.apply_chat_template(
+            messages, tools=tools, tokenize=False, add_generation_prompt=True
+        )
 
     def call_model(self, model_input):
-        output = self.pipeline(model_input)
-        return get_response_text(output, "[/INST]")
+        output = self.pipeline(model_input, **self.gen_kwargs)
+        return output[0]["generated_text"].strip()
     
 MODELS = {
     "Claude": ClaudeModel,
