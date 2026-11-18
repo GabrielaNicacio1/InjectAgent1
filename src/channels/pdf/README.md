@@ -33,6 +33,8 @@ python3 src/evaluate_prompted_agent.py --model_type HFChat --model_name meta-lla
   --data_dir data/channels/pdf/pymupdf/white
 ```
 
+For a vLLM server and parallel runs (`--model_type VLLM --num_workers 32`), see `docs/RUNNING_VLLM.md`.
+
 `--data_dir` (new, default `./data`) also adds the folder to the results folder name, so
 cells never share a cache. `--only_first_step` skips the data-stealing step 2, which
 calls OpenAI `gpt-4-0613` for any uncached attacker-tool call.

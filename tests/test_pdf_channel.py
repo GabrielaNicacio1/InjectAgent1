@@ -10,7 +10,6 @@ import types
 
 import pytest
 
-os.environ.setdefault("OPENAI_API_KEY", "sk-dummy-for-tests")  # src/utils.py builds an OpenAI client at import
 
 from src.channels.pdf.build_cases import ENHANCED_PREFIX, USER_TOOL, make_case
 from src.channels.pdf.documents import DOCUMENTS
