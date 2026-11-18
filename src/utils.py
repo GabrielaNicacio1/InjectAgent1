@@ -3,12 +3,12 @@ import os
 import re
 from src.prompts.generation_prompts import SYSTEM_MESSAGE, DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE, EXAMPLE
 
-'''client = OpenAI(
-    api_key = os.environ.get("OPENAI_API_KEY"),
-    organization = os.environ.get("OPENAI_ORGANIZATION")
-)'''
+_client = None
+
+
 def get_openai_client():
-    # Created only when needed, so local-only runs work without an OpenAI key.
+    """Created on first use, so runs that never call OpenAI (local/vLLM models with
+    --only_first_step) work without OPENAI_API_KEY."""
     global _client
     if _client is None:
         from openai import OpenAI
@@ -155,7 +155,7 @@ def get_simulated_attacker_tool_response(attacker_tool, attacker_tool_parameters
     
     prompt_filled = DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE.format(example = EXAMPLE, attacker_tool = attacker_tool_des, tool_parameters = attacker_tool_parameters)
     
-    completion = client.chat.completions.create(
+    completion = get_openai_client().chat.completions.create(
                     model="gpt-4-0613", 
                     messages=[
                         {"role": "system", "content":SYSTEM_MESSAGE},
