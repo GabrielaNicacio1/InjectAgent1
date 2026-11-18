@@ -47,10 +47,10 @@ def parse_args():
 
 
 def main(a):
-    from src.local_models import LocalChatModel  # imported here so --help works without torch
+    from src.models import LlamaModel  # imported here so --help works without torch
 
     harness = HARNESSES[a.harness]
-    model = LocalChatModel(a.model_name, a.temperature, a.max_new_tokens)
+    model = LlamaModel(a.model_name, a.temperature, a.max_new_tokens)
     tool_dict = get_tool_dict()
     gpt_tools = get_tool_dict(gpt_format=True)
     with open(SIMULATED) as f:
