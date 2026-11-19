@@ -1,10 +1,20 @@
 import argparse
 
-def define_arguments_prompted(parser):
+HARNESS_CHOICES = ['S1', 'S2', 'S3', 'S4', 'S4P']
+
+def define_arguments_prompted(parser, harness=False):
     parser.add_argument("--model_type", help="Type of the model to evaluate")
     parser.add_argument("--model_name", help="Name of the model to evaluate", default='', required=True)
     parser.add_argument("--setting", choices=['base', 'enhanced'], help="base or enhanced setting", required=True)
-    parser.add_argument("--prompt_type", choices=['InjecAgent', 'hwchase17_react'], help="prompt type", required=True)
+    
+    if harness:
+        # evaluate_harness.py: the scaffold replaces --prompt_type (S1 = InjecAgent, S2 = hwchase17_react)
+        parser.add_argument("--harness", choices=HARNESS_CHOICES, required=True,
+                            help="Scaffold from src/harnesses.py: S1 InjecAgent ReAct, S2 hwchase17 ReAct, "
+                                 "S3 native tool calling, S4 spotlighting, S4P placebo")
+    else:
+        parser.add_argument("--prompt_type", choices=['InjecAgent', 'hwchase17_react'], help="prompt type", required=True)
+
     parser.add_argument("--only_first_step", default=False, action='store_true', help="Only predict the first step")
     parser.add_argument("--use_cache", default=False, action='store_true', help="Use existing dataset")
     parser.add_argument("--only_get_score", default=False, action='store_true', help="Only get score without inference")
