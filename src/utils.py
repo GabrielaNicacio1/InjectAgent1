@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from src.prompts.generation_prompts import SYSTEM_MESSAGE, DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE, EXAMPLE
+from prompts.generation_prompts import SYSTEM_MESSAGE, DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE, EXAMPLE
 
 _client = None
 

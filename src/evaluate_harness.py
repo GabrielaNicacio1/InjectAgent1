@@ -20,10 +20,10 @@ import threading
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
-from src.utils import get_tool_dict, get_simulated_attacker_tool_response, get_score
-from src.params import parse_arguments
-from src.harnesses import HARNESSES  # HARNESS (replaces PROMPT_DICT and evaluate_output_prompted)
-from src.models import MODELS
+from utils import get_tool_dict, get_simulated_attacker_tool_response, get_score
+from params import parse_arguments
+from harnesses import HARNESSES  # HARNESS (replaces PROMPT_DICT and evaluate_output_prompted)
+from models import MODELS
 
 # get_simulated_attacker_tool_response() rewrites data/attacker_simulated_responses.json,
 # so parallel workers must not run it at the same time.

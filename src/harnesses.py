@@ -18,8 +18,8 @@ import ast
 import json
 import re
 
-from src.prompts.agent_prompts import SYS_PROMPT, USER_PROMPT, USER_PROMPT_SIMPLE
-from src.output_parsing import evaluate_output_prompted, evaluate_output_finetuned
+from prompts.agent_prompts import SYS_PROMPT, USER_PROMPT, USER_PROMPT_SIMPLE
+from output_parsing import evaluate_output_prompted, evaluate_output_finetuned
 
 # --- S4 text -----------------------------------------------------------------
 # The two notices are kept close in length on purpose (check with
