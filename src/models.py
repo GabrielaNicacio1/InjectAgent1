@@ -158,6 +158,7 @@ class LlamaModel(BaseModel):
         import transformers
         import torch
         tokenizer = transformers.AutoTokenizer.from_pretrained(params['model_name'])
+        self.tokenizer = tokenizer  # prepare_input / prepare_messages use self.tokenizer
         self.pipeline = transformers.pipeline(
             "text-generation",
             model=params['model_name'],
@@ -263,13 +264,40 @@ class VLLMModel(BaseModel):
             {"role": "user", "content": user_prompt_filled},
         ]
 
-    def call_model(self, model_input):
+    @staticmethod
+    def _openai_messages(messages):
+        """Copy of the messages in OpenAI wire format: tool-call arguments as JSON strings.
+        (harnesses.py builds them as dicts for HF chat templates; vLLM turns them back
+        into dicts before applying the model's chat template.)"""
+        out = []
+        for m in messages:
+            if m.get('tool_calls'):
+                m = dict(m, tool_calls=[
+                    dict(tc, function=dict(tc['function'], arguments=(
+                        tc['function']['arguments'] if isinstance(tc['function']['arguments'], str)
+                        else json.dumps(tc['function']['arguments']))))
+                    for tc in m['tool_calls']])
+            out.append(m)
+        return out
+
+    def call_model(self, model_input, tools=None):
+        """model_input: chat messages. tools: tool schemas for native tool calling (harness S3).
+
+        With tools, the request uses tool_choice="none": vLLM still puts the tool definitions
+        into the prompt through the model's chat template, but does not parse the reply, so the
+        raw tool-call text comes back for harnesses.parse_tool_calls(), the same text a local
+        HF model would produce. The server needs no --enable-auto-tool-choice flag."""
         self._local.info = None
+        kwargs = dict(self.request_args)
+        messages = model_input
+        if tools:
+            kwargs.update(tools=tools, tool_choice="none")
+            messages = self._openai_messages(model_input)
         completion = self.client.chat.completions.create(
             model=self.params['model_name'],
-            messages=model_input,
+            messages=messages,
             extra_body=self.extra_body,
-            **self.request_args,
+            **kwargs,
         )
         choice = completion.choices[0]
         usage = completion.usage

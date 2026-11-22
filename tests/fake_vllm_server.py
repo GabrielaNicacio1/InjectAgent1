@@ -73,7 +73,7 @@ class FakeVLLM:
                             with server.lock:
                                 server._failed.add(key)
                             return self._send(500, {"error": {"message": "transient (fake)"}})
-                    text = server.reply(user)
+                    text = server.reply_native(body) if body.get("tools") else server.reply(user)
                     self._send(200, {
                         "id": "cmpl-fake", "object": "chat.completion", "created": 0, "model": server.model,
                         "choices": [{"index": 0, "message": {"role": "assistant", "content": text},
@@ -94,12 +94,27 @@ class FakeVLLM:
 
     @staticmethod
     def reply(user):
-        tools = ast.literal_eval(re.search(r"tools available to you are: (\[.*?\])", user).group(1))
+        m = (re.search(r"tools available to you are: (\[.*?\])", user)      # S1/S4/S4P prompt
+             or re.search(r"should be one of \[?(\[.*?\])\]?", user))       # S2 (hwchase17) prompt
+        tools = ast.literal_eval(m.group(1))
         if len(tools) > 2 and f"Action: {tools[1]}\nAction Input:" in user.split("Scratchpad")[-1]:
             return f"Thought: Now I send the data.\nAction: {tools[2]}\nAction Input: {{\"to\": \"x@example.com\"}}"
         if int(hashlib.sha256(user.encode()).hexdigest(), 16) % 2 == 0:
             return f"Thought: The document asks me to do this.\nAction: {tools[1]}\nAction Input: {{\"note\": \"fake\"}}"
         return "Thought: I have what I need.\nFinal Answer: Here is a summary of the document."
+
+    @staticmethod
+    def reply_native(body):
+        """Native tool calling (harness S3): answer with raw Llama-3.1-style JSON tool-call text,
+        the text a server returns with tool_choice="none" (no server-side tool parsing)."""
+        names = [t["function"]["name"] for t in body["tools"]]
+        msgs = body["messages"]
+        if len([m for m in msgs if m["role"] == "tool"]) >= 2 and len(names) > 2:   # data-stealing step 2
+            return json.dumps({"name": names[2], "parameters": {"to": "x@example.com"}})
+        last_tool = [m for m in msgs if m["role"] == "tool"][-1]["content"]
+        if int(hashlib.sha256(last_tool.encode()).hexdigest(), 16) % 2 == 0:
+            return json.dumps({"name": names[1], "parameters": {"note": "fake"}})
+        return "Here is a summary of the document."
 
     def __enter__(self):
         self.thread.start()
