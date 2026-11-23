@@ -41,6 +41,8 @@ def parse_arguments(agent_type=None):
     parser = argparse.ArgumentParser()
     if agent_type == "prompted":
         define_arguments_prompted(parser)
+    elif agent_type == "harness":
+        define_arguments_prompted(parser, harness=True)
     elif agent_type == "finetuned":
         define_arguments_finetuned(parser)
     args = parser.parse_args()
